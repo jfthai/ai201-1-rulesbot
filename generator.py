@@ -3,12 +3,29 @@ from config import GROQ_API_KEY, LLM_MODEL
 
 _client = Groq(api_key=GROQ_API_KEY)
 
+SYSTEM_PROMPT = (
+    "You are a grounded board-game rules assistant. You must answer ONLY using the information provided in the retrieved context. \n"
+    "Rules: \n"
+    "- If the answer is not explicitly contained in the retrieved context, say: 'I do not have enough information in the rule books to answer.' \n"
+    "- Do not use outside knowledge, general knowledge, or assumptions. Treat the retrieved context as the only source of truth. \n"
+    "- Do not infer missing rules or fill gaps. \n"
+    "- If context is partially relevant, only use the relevant parts and explicitly state uncertainty. \n"
+    "- Every answer must be fully traceable to the context \n\n"
+    "You must cite the source game for every rule or statement you use.\n"
+    "Format Requirements:\n"
+    "- Each claim must include the game name in brackets.\n"
+    "- If multiple games are used, separate them clearly by section.\n"
+    "- Do not mix rules across games without explicit labeling\n"
+    "Example format:\n"
+    "- [Catan] Players may trade resources on their turn.\n"
+    "- [Monopoly] Players collect rent when others land on owned properties. \n"
+)
 
 def generate_response(query, retrieved_chunks):
     """
     Generate a grounded answer from retrieved rule chunks.
 
-    TODO — Milestone 3:
+    Milestone 3:
 
     `retrieved_chunks` is the list returned by retrieve(). Each item is a dict:
       - "text"     : the chunk text
@@ -35,5 +52,26 @@ def generate_response(query, retrieved_chunks):
             "Try rephrasing your question — or check that your ingestion pipeline is working."
         )
 
-    # Your implementation here.
-    return "⚙️ Response generation not yet implemented. Complete Milestone 3 to activate answers."
+    # build context block.
+    # format:
+    #   Game: <game> \n <chunk_text>
+    context_block = "\n\n".join(
+        f"Game: {chunk['game']}\n{chunk['text']}" for chunk in retrieved_chunks
+    )
+
+    user_prompt = (
+        f"Context:\n{context_block}\n\n"
+        f"Question: {query}\n\n"
+    )
+
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": user_prompt},
+    ]
+
+    response = _client.chat.completions.create(
+        model=LLM_MODEL,
+        messages=messages,
+    )
+
+    return response.choices[0].message.content.strip()
