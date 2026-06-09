@@ -50,7 +50,7 @@ def retrieve(query, n_results=N_RESULTS):
     """
     Find the most relevant rule chunks for a user's question.
 
-    TODO — Milestone 2:
+    Milestone 2:
 
     Use _collection.query() to run a semantic search. It takes:
       - query_texts : a list containing your query string
@@ -67,6 +67,35 @@ def retrieve(query, n_results=N_RESULTS):
     """
     if _collection.count() == 0:
         return []
+    
+    results = _collection.query(
+        query_texts=[query], 
+        n_results=n_results, 
+        include=["documents", "metadatas", "distances"],
+    )
+    
+    if len(results) == 0:
+        return []
+    
+    # Unpack index [0] 
+    docu = results["documents"][0]
+    meta = results["metadatas"][0]
+    dist = results["distances"][0]
 
-    # Your implementation here.
-    return []
+    chunks = [
+        {
+            "text": docu,
+            "game": meta,
+            "distance": dist
+        }
+        for docu, meta, dist in zip(docu, meta, dist) if dist < 0.7
+    ]
+
+    # -- To check distance scores
+    #for chunk in chunks:
+    #    print(f"[{chunk['game']}] (dist: {chunk['distance']:.3f}) {chunk['text'][:80]}...")
+
+    return chunks
+
+# -- To test retrieval
+#retrieve('What happens when you roll a 7?')
