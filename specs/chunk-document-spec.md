@@ -116,11 +116,11 @@ handle these cases better, at the cost of more implementation complexity.
 **Actual chunk count produced across all 8 rule books:**
 
 ```
-[your answer here]
+149 chunks
 ```
 
 **One thing that surprised you or didn't match your expectations:**
 
 ```
-[your answer here]
+There are more chunks than expected, which is due to the overlapping setting. There are duplicate sections which makes the chunk data larger than the actual data.
 ```
